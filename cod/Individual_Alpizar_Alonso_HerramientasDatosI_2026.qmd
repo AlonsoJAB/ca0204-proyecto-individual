@@ -1,0 +1,253 @@
+---
+title: "¿Cuál es la mejor estrategia para correr un maratón?"
+author: "Alonso José Alpízar Brenes"
+date: today
+date-format: "D [de] MMMM [de] YYYY"
+lang: es
+format:
+  pdf:
+    documentclass: article
+    papersize: letter
+    fontsize: 12pt
+    geometry:
+      - top=2.2cm
+      - bottom=2.5cm
+      - left=2.8cm
+      - right=2.8cm
+    linestretch: 1.15
+    number-sections: true
+    colorlinks: true
+    linkcolor: black
+    urlcolor: black
+    citecolor: black
+    fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{newpxtext}
+        \usepackage{microtype}
+        \usepackage{float}
+        \usepackage{xcolor}
+        \usepackage{titlesec}
+        \titleformat{\section}{\normalsize\bfseries\scshape}{\thesection.}{0.6em}{}
+        \titlespacing*{\section}{0pt}{1.2em}{0.4em}
+        \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.6em}{}
+        \titlespacing*{\subsection}{0pt}{0.8em}{0.3em}
+        \usepackage{fancyhdr}
+        \pagestyle{fancy}
+        \fancyhf{}
+        \renewcommand{\headrulewidth}{0pt}
+        \cfoot{\footnotesize\thepage}
+        \fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\cfoot{\footnotesize\thepage}}
+        \makeatletter
+        \renewcommand{\maketitle}{%
+          \thispagestyle{plain}%
+          \begin{center}
+          {\footnotesize\color{gray} Universidad de Costa Rica · CA-0204 Herramientas de Ciencia de Datos I · II ciclo 2026}\par
+          \vspace{0.8em}
+          {\Large\bfseries \@title\par}
+          \vspace{0.3em}
+          {\large Evidencia del Maratón de Berlín 2017–2019\par}
+          \vspace{0.6em}
+          {\normalsize \@author\par}
+          \vspace{0.1em}
+          {\small\@date\par}
+          \end{center}
+          \vspace{-0.4em}
+          \noindent\rule{\linewidth}{0.4pt}\par
+          \vspace{0.8em}
+        }
+        \makeatother
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+
+# Paquetes y datos -------------------------------------------------------
+library(tidyverse)
+library(here)
+
+# Base con ritmos y estrategias, generada por cod/metodologia.R
+berlin_limpio <- readRDS(here("data", "berlin_metodologia.rds"))
+
+# Funciones auxiliares ----------------------------------------------------
+# pct(): porcentaje de valores TRUE con formato "53 %"
+pct <- function(x) paste0(round(100 * mean(x)), " %")
+
+# miles(): número con espacio como separador de miles (122 603)
+miles <- function(x) format(x, big.mark = " ", scientific = FALSE)
+
+# Datos para el texto -----------------------------------------------------
+n_total <- nrow(berlin_limpio)
+n_crc   <- sum(berlin_limpio$nationality == "CRC", na.rm = TRUE)
+```
+
+# Introducción
+
+El maratón es una prueba de 42.195 km en la que no basta con estar bien preparado: también importa cómo se reparte el esfuerzo a lo largo de la carrera. Muchos corredores recreativos salen más rápido de lo que pueden sostener y pagan el costo en los últimos kilómetros, cuando el ritmo cae de forma marcada, lo que se conoce popularmente como "chocar contra el muro". 
+
+Este trabajo analiza esa decisión en el Maratón de Berlín 2017–2019, uno de los recorridos más planos del mundo, a partir de los tiempos parciales de más de 120 000 corredores recreativos publicados por Miller (2021). Para ello, se compara el ritmo de cada corredor en los primeros 10 km y en los últimos 7.195 km con su propio ritmo medio de carrera.
+
+# Objetivo
+
+Determinar qué estrategia de ritmo se asocia con mejores tiempos finales en el Maratón de Berlín 2017–2019, comparando el ritmo de cada corredor en la salida y en el cierre con su ritmo medio de carrera, por sexo y nivel.
+
+# Metodología
+
+## Datos
+
+Se utilizan los resultados del Maratón de Berlín de 2017, 2018 y 2019, recopilados a partir de los resultados oficiales y publicados en el repositorio público *marathon-results* de GitHub (Miller, 2021; licencia MIT), consultado el 19 de octubre de 2026. El conjunto contiene 123 797 corredores (39 220 en 2017, 40 641 en 2018 y 43 936 en 2019), con una fila por corredor. La @tbl-variables resume las variables utilizadas.
+
+| Variable | Descripción |
+|:-----------------------------------|:-----------------------------------|
+| `gender` | Sexo del corredor (M, W) |
+| `nationality` | Nacionalidad (código de país, p. ej. CRC) |
+| `split_5k` … `split_40k` | Tiempo acumulado en cada punto de control cada 5 km |
+| `time_half` | Tiempo acumulado en la media maratón |
+| `time_full` | Tiempo final |
+| `place_overall` | Posición general |
+| `year` | Año de la carrera |
+
+: Variables principales del conjunto de datos. Fuente: elaboración propia con base en Miller (2021).
+
+Todos los registros cuentan con tiempo final, ya que la base solo incluye a quienes terminaron la carrera. Se excluyen los 271 registros con algún parcial faltante (0.22 %), criterio consistente con estudios similares (Dong y Li, 2026). También se excluyen los corredores clasificados como altamente entrenados o de élite según el marco de McKay et al. (2022), es decir, hombres con menos de 2:27:54 y mujeres con menos de 2:50:41 (0.34 % y 0.42 % de cada sexo), ya que su ritmo suele estar marcado por corredores guía o *pacers* y por la disputa de posiciones, por lo que no refleja la estrategia de un corredor recreativo. Por último, se excluye a quienes superaron el tiempo límite oficial de la carrera, de 6 h 15 min (SCC Events, s. f.), que son 1 568 corredores. Tras la limpieza quedan `r miles(n_total)` corredores, de los cuales `r n_crc` son costarricenses.
+
+## Ritmo relativo y clasificación
+
+Para cada corredor se calcula su ritmo medio de carrera (RMC), en minutos por kilómetro, y el ritmo de dos tramos: la salida (primeros 10 km) y el cierre (desde el km 35 hasta la meta, 7.195 km):
+
+$$RMC = \frac{t_{\text{final}}}{42.195} \qquad
+r_{\text{salida}} = \frac{t_{\text{10k}}}{10} \qquad
+r_{\text{cierre}} = \frac{t_{\text{final}} - t_{\text{35k}}}{7.195}$$
+
+donde $t$ es el tiempo acumulado, en minutos, en cada punto de control. Para comparar corredores de distintos niveles, el ritmo de cada tramo se expresa en relación con el ritmo medio del propio corredor, mediante el ritmo relativo:
+
+$$RP = 100 \times \frac{RMC - r_{\text{tramo}}}{RMC}$$
+
+Un valor positivo indica que el tramo se corrió más rápido que el ritmo medio, y uno negativo, más lento. Con base en este valor, cada corredor se clasifica en la salida y en el cierre en tres grupos: **por encima** del ritmo medio ($RP > 5\%$), **igual** ($-5\% \le RP \le 5\%$) y **por debajo** ($RP < -5\%$). Para el corredor promedio de la muestra, el margen de ±5 % equivale a unos 18 segundos por kilómetro. Luego se describe la proporción de corredores en cada grupo y se compara su tiempo final promedio.
+
+# Resultados
+
+```{r}
+#| label: fig-histogramas
+#| fig-cap: "Distribución del ritmo relativo en el inicio y el final de la carrera, comparado con el ritmo medio de cada corredor. Cada barra agrupa a los corredores con un ritmo relativo similar (intervalos de 1 %). En (b), el eje se muestra hasta −25 %; los pocos corredores con valores menores se incluyen en los porcentajes. Fuente: elaboración propia con datos de Miller (2021)."
+#| fig-subcap:
+#|   - "Primeros 10 km"
+#|   - "Últimos 7 km"
+#| layout-nrow: 2
+#| fig-width: 6.5
+#| fig-height: 2.7
+
+# Estilo y etiquetas comunes a los dos histogramas ------------------------
+tema_hist <- theme_minimal(base_size = 10) +
+  theme(panel.grid.minor   = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.title.x       = element_text(size = 9, margin = margin(t = 6)))
+
+etiqueta_x <- function(x) paste0(ifelse(x > 0, "+", ""), x, " %")
+
+# (a) Salida: primeros 10 km ----------------------------------------------
+ggplot(berlin_limpio, aes(x = rp_salida, fill = salida)) +
+  geom_histogram(binwidth = 1, boundary = 0, color = "white", linewidth = 0.2) +
+  annotate("text", x = -10.5, y = 11900, size = 3, lineheight = 0.9, color = "grey30",
+           label = paste0("Más lento que\nsu promedio\n", pct(berlin_limpio$salida == "Por debajo"))) +
+  annotate("text", x = 1.5, y = 11900, size = 3, lineheight = 0.9, color = "#2B5C8A", fontface = "bold",
+           label = paste0("A su ritmo\npromedio\n", pct(berlin_limpio$salida == "Igual"))) +
+  annotate("text", x = 15, y = 11900, size = 3, lineheight = 0.9, color = "#B5603A", fontface = "bold",
+           label = paste0("Más rápido que\nsu promedio\n", pct(berlin_limpio$salida == "Por encima"))) +
+  scale_fill_manual(values = c("Por debajo" = "grey70", "Igual" = "#2B5C8A", "Por encima" = "#B5603A"),
+                    guide = "none") +
+  scale_x_continuous(breaks = seq(-10, 25, 5), labels = etiqueta_x) +
+  scale_y_continuous(labels = miles, expand = expansion(mult = c(0, 0.02))) +
+  coord_cartesian(xlim = c(-14, 25), ylim = c(0, 13300)) +
+  labs(x = "← más lento      Ritmo en los primeros 10 km comparado con su promedio      más rápido →",
+       y = "Corredores") +
+  tema_hist
+
+# (b) Cierre: últimos 7 km ------------------------------------------------
+ggplot(berlin_limpio, aes(x = rp_cierre, fill = cierre)) +
+  geom_histogram(binwidth = 1, boundary = 0, color = "white", linewidth = 0.2) +
+  annotate("text", x = -16, y = 8400, size = 3, lineheight = 0.9, color = "#B5603A", fontface = "bold",
+           label = paste0("Más lento que\nsu promedio\n", pct(berlin_limpio$cierre == "Por debajo"))) +
+  annotate("text", x = -1, y = 8400, size = 3, lineheight = 0.9, color = "#2B5C8A", fontface = "bold",
+           label = paste0("A su ritmo\npromedio\n", pct(berlin_limpio$cierre == "Igual"))) +
+  annotate("text", x = 11, y = 8400, size = 3, lineheight = 0.9, color = "grey30",
+           label = paste0("Más rápido que\nsu promedio\n", pct(berlin_limpio$cierre == "Por encima"))) +
+  scale_fill_manual(values = c("Por debajo" = "#B5603A", "Igual" = "#2B5C8A", "Por encima" = "grey70"),
+                    guide = "none") +
+  scale_x_continuous(breaks = seq(-25, 15, 5), labels = etiqueta_x) +
+  scale_y_continuous(labels = miles, expand = expansion(mult = c(0, 0.02))) +
+  coord_cartesian(xlim = c(-25, 15), ylim = c(0, 9500)) +
+  labs(x = "← más lento      Ritmo en los últimos 7 km comparado con su promedio      más rápido →",
+       y = "Corredores") +
+  tema_hist
+```
+
+La @fig-histogramas muestra cómo reparten el esfuerzo los corredores. En la salida, el `r pct(berlin_limpio$salida == "Igual")` corre los primeros 10 km a su ritmo medio, pero casi la otra mitad (`r pct(berlin_limpio$salida == "Por encima")`) sale más rápido de lo que luego puede sostener, y prácticamente nadie (`r pct(berlin_limpio$salida == "Por debajo")`) sale más lento. En el cierre el patrón se invierte: el `r pct(berlin_limpio$cierre == "Por debajo")` corre los últimos 7 km más lento que su promedio, el `r pct(berlin_limpio$cierre == "Igual")` logra mantener su ritmo y solo el `r pct(berlin_limpio$cierre == "Por encima")` acelera al final. Es decir, el error más común no es salir lento, sino salir demasiado rápido, y la mayoría de los corredores termina perdiendo ritmo en el tramo final.
+
+```{r}
+#| label: fig-estrategias
+#| fig-cap: "Tiempo final promedio según cómo corrió cada persona los primeros 10 km y los últimos 7 km, comparado con su propio ritmo medio. Debajo de cada barra, el porcentaje de corredores del grupo; en azul, el grupo con el mejor tiempo. Fuente: elaboración propia con datos de Miller (2021)."
+#| fig-width: 6.5
+#| fig-height: 3.8
+
+# Tiempo medio y diferencia con el grupo "Igual" por tramo y estrategia ---
+datos_fig <- berlin_limpio |>
+  pivot_longer(c(salida, cierre), names_to = "tramo", values_to = "estrategia") |>
+  mutate(tramo = factor(tramo, levels = c("salida", "cierre"),
+                        labels = c("Primeros 10 km", "Últimos 7 km"))) |>
+  group_by(tramo, estrategia) |>
+  summarise(n = n(), tiempo = mean(time_full), .groups = "drop_last") |>
+  mutate(pct = 100 * n / sum(n),
+         dif = tiempo - tiempo[estrategia == "Igual"]) |>
+  ungroup() |>
+  mutate(
+    etiqueta_tiempo = sprintf("%d h %02d min", tiempo %/% 60, round(tiempo %% 60)),
+    etiqueta_dif    = if_else(estrategia == "Igual", "mejor tiempo",
+                              sprintf("%+d min", round(dif))),
+    nombre = recode(estrategia,
+                    "Por debajo" = "Más lento que\nsu promedio",
+                    "Igual"      = "A su ritmo\npromedio",
+                    "Por encima" = "Más rápido que\nsu promedio"),
+    eje = paste0(nombre, "\n", round(pct), " %")
+  )
+
+ggplot(datos_fig,
+       aes(x = reorder(eje, as.integer(estrategia)), y = tiempo / 60,
+           fill = estrategia == "Igual")) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = etiqueta_tiempo), vjust = -1.7, size = 3.3, fontface = "bold") +
+  geom_text(aes(label = etiqueta_dif), vjust = -0.5, size = 3, color = "grey35") +
+  facet_wrap(~ tramo, scales = "free_x") +
+  scale_fill_manual(values = c(`TRUE` = "#2B5C8A", `FALSE` = "grey75"), guide = "none") +
+  scale_y_continuous(limits = c(0, 5.7), breaks = 0:5, expand = c(0, 0)) +
+  labs(x = NULL, y = "Tiempo final promedio (horas)") +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor   = element_blank(),
+        strip.text         = element_text(face = "bold", size = 11),
+        axis.text.x        = element_text(size = 9, lineheight = 0.9))
+```
+
+La @fig-estrategias muestra que, en ambos tramos, el mejor tiempo promedio corresponde a quienes corren a su ritmo medio. Quienes salen más rápido que su promedio terminan, en promedio, unos 41 minutos después que quienes salen a su ritmo, y quienes pierden ritmo en el cierre tardan unos 20 minutos más que quienes lo mantienen.
+
+\newpage
+
+# Bibliografía {.unnumbered}
+
+\setlength{\parindent}{-1.27cm}
+\setlength{\leftskip}{1.27cm}
+\setlength{\parskip}{0.8em}
+
+Deaner, R. O., Carter, R. E., Joyner, M. J., y Hunter, S. K. (2015). Men are more likely than women to slow in the marathon. *Medicine & Science in Sports & Exercise, 47*(3), 607–616. <https://doi.org/10.1249/MSS.0000000000000432>
+
+Dong, Q., y Li, Z. (2026). Pacing strategy patterns and performance outcomes in marathon running: A large-scale analysis of split time data. *PLOS ONE, 21*(7), e0352808. <https://doi.org/10.1371/journal.pone.0352808>
+
+McKay, A. K. A., Stellingwerff, T., Smith, E. S., Martin, D. T., Mujika, I., Goosey-Tolfrey, V. L., Sheppard, J., y Burke, L. M. (2022). Defining training and performance caliber: A participant classification framework. *International Journal of Sports Physiology and Performance, 17*(2), 317–331. <https://doi.org/10.1123/ijspp.2021-0451>
+
+Miller, A. (2021). *marathon-results* \[Conjunto de datos\]. GitHub. Recuperado el 19 de octubre de 2026, de <https://github.com/AndrewMillerOnline/marathon-results>
+
+SCC Events. (s. f.). *BMW Berlin Marathon* \[Reglamento de participación\]. Recuperado el \[fecha\], de \[URL\]
