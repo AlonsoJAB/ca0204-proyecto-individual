@@ -10,7 +10,7 @@ Análisis de las estrategias de ritmo en el Maratón de Berlín 2017–2019: se 
 - `cod/`: scripts de R y el informe en Quarto
   - `limpieza.R`: carga y limpieza de los datos
   - `metodologia.R`: cálculo de ritmos y clasificación de estrategias
-  - `Individual_Alpizar_HerramientasDatosI_2026.qmd`: informe final en PDF
+  - `Individual_Alpizar_Alonso_HerramientasDatosI_2026.qmd`: informe final en PDF
 - `data/`: resultados del Maratón de Berlín 2017–2019 (Miller, 2021)
 - `info/`: documentos de apoyo
 - `config/`: configuración del proyecto
@@ -20,7 +20,7 @@ Análisis de las estrategias de ritmo en el Maratón de Berlín 2017–2019: se 
 1. Abrir `Proyecto Individual.Rproj` en RStudio.
 2. Instalar los paquetes: `install.packages(c("tidyverse", "here"))`.
 3. Correr `cod/limpieza.R` y después `cod/metodologia.R`.
-4. Renderizar `cod/Individual_Alpizar_HerramientasDatosI_2026.qmd`.
+4. Renderizar `cod/Individual_Alpizar_Alonso_HerramientasDatosI_2026.qmd`.
 
 ## Fuente de datos
 
