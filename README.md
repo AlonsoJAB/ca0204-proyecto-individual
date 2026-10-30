@@ -10,7 +10,8 @@ Análisis de las estrategias de ritmo en el Maratón de Berlín 2017–2019: se 
 - `cod/`: scripts de R y el informe en Quarto
   - `limpieza.R`: carga y limpieza de los datos
   - `metodologia.R`: cálculo de ritmos y clasificación de estrategias
-  - `Individual_Alpizar_Alonso_HerramientasDatosI_2026.qmd`: informe final en PDF
+  - `Individual_Alpizar_Alonso_HerramientasDatosI_2026.qmd`: informe en Quarto
+- `res/`: informe en Quarto
 - `data/`: resultados del Maratón de Berlín 2017–2019 (Miller, 2021)
 - `info/`: documentos de apoyo
 - `config/`: configuración del proyecto
