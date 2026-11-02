@@ -3,3 +3,4 @@
 .RData
 .Rhistory
 data/*.rds
+cod/*.pdf
