@@ -10,10 +10,10 @@ format:
     papersize: letter
     fontsize: 12pt
     geometry:
-      - top=2.2cm
-      - bottom=2.5cm
-      - left=2.8cm
-      - right=2.8cm
+      - top=2cm
+      - bottom=2cm
+      - left=2.5cm
+      - right=2.5cm
     linestretch: 1.15
     number-sections: true
     colorlinks: true
@@ -33,6 +33,9 @@ format:
         \titlespacing*{\section}{0pt}{1.2em}{0.4em}
         \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.6em}{}
         \titlespacing*{\subsection}{0pt}{0.8em}{0.3em}
+        \setlength{\abovecaptionskip}{4pt}
+        \setlength{\belowcaptionskip}{0pt}
+        \setlength{\intextsep}{8pt}
         \usepackage{fancyhdr}
         \pagestyle{fancy}
         \fancyhf{}
@@ -88,63 +91,58 @@ n_crc   <- sum(berlin_limpio$nationality == "CRC", na.rm = TRUE)
 
 # Introducción
 
-El maratón es una prueba de 42.195 km en la que no basta con estar bien preparado: también importa cómo se reparte el esfuerzo a lo largo de la carrera. Muchos corredores recreativos salen más rápido de lo que pueden sostener y pagan el costo en los últimos kilómetros, cuando el ritmo cae de forma marcada, lo que se conoce popularmente como "chocar contra el muro".
+En un maratón no basta con estar bien preparado: también importa cómo se reparte el esfuerzo. Muchos corredores recreativos salen más rápido de lo que pueden sostener y pagan el costo al final, cuando el ritmo cae de forma marcada ("chocar contra el muro").
 
-Este trabajo analiza esa decisión en el Maratón de Berlín 2017–2019, uno de los recorridos más planos del mundo, a partir de los tiempos parciales de más de 120 000 corredores recreativos publicados por Miller (2021). Para ello, se compara el ritmo de cada corredor en los primeros 10 km y en los últimos 7.195 km con su propio ritmo medio de carrera.
+Este trabajo analiza esa decisión con los tiempos parciales de más de 120 000 corredores del Maratón de Berlín 2017–2019 (Miller, 2021), uno de los recorridos más planos del mundo, comparando el ritmo de cada corredor en los primeros 10 km y en los últimos 7.195 km con su propio ritmo medio.
 
 # Objetivo
 
-Determinar qué estrategia de ritmo se asocia con mejores tiempos finales en el Maratón de Berlín 2017–2019, comparando el ritmo de cada corredor en la salida y en el cierre con su ritmo medio de carrera, por sexo y nivel.
+Determinar qué estrategia de ritmo se asocia con mejores tiempos finales en el Maratón de Berlín 2017–2019, comparando el ritmo de cada corredor en la salida y en el cierre con su ritmo medio de carrera, según su nivel.
 
 # Metodología
 
 ## Datos
 
-Se utilizan los resultados del Maratón de Berlín de 2017, 2018 y 2019, recopilados a partir de los resultados oficiales y publicados en el repositorio público *marathon-results* de GitHub (Miller, 2021; licencia MIT), consultado el 19 de octubre de 2026. El conjunto contiene 123 797 corredores (39 220 en 2017, 40 641 en 2018 y 43 936 en 2019), con una fila por corredor. La @tbl-variables resume las variables utilizadas.
+Se usan los resultados del Maratón de Berlín 2017, 2018 y 2019 publicados en el repositorio *marathon-results* de GitHub (Miller, 2021; licencia MIT), consultado el 19 de octubre de 2026: 123 797 corredores, uno por fila (@tbl-variables).
 
 | Variable | Descripción |
 |:---|:---|
 | `gender` | Sexo del corredor (M, W) |
 | `nationality` | Nacionalidad (código de país, p. ej. CRC) |
-| `split_5k` … `split_40k` | Tiempo acumulado en cada punto de control cada 5 km |
+| `split_5k` … `split_40k` | Tiempo acumulado cada 5 km |
 | `time_half` | Tiempo acumulado en la media maratón |
 | `time_full` | Tiempo final |
-| `place_overall` | Posición general |
 | `year` | Año de la carrera |
 
-: Variables principales del conjunto de datos. Fuente: elaboración propia con base en Miller (2021). {#tbl-variables}
+: Variables utilizadas. Fuente: elaboración propia con base en Miller (2021). {#tbl-variables}
 
-Todos los registros cuentan con tiempo final, ya que la base solo incluye a quienes terminaron la carrera. Se excluyen los 271 registros con algún parcial faltante (0.22 %). Se optó por no imputarlos porque cualquier imputación, como la interpolación entre puntos de control, supone un ritmo constante en el tramo faltante, que es precisamente la variable de interés; además, dado su bajo número, su exclusión no altera los resultados, criterio consistente con estudios similares (Dong y Li, 2026). También se excluyen los corredores clasificados como altamente entrenados o de élite según el marco de McKay et al. (2022), es decir, hombres con menos de 2:27:54 y mujeres con menos de 2:50:41 (0.34 % y 0.42 % de cada sexo), ya que su ritmo suele estar marcado por corredores guía o *pacers* y por la disputa de posiciones, por lo que no refleja la estrategia de un corredor recreativo. Por último, se excluye a quienes superaron el tiempo límite oficial de la carrera, de 6 h 15 min (SCC Events, s. f.), que son 1 568 corredores. Tras la limpieza quedan `r miles(n_total)` corredores, de los cuales `r n_crc` son costarricenses.
+La base solo incluye a quienes terminaron la carrera. Se excluyen los 271 registros con algún parcial faltante (0.22 %); no se imputan porque cualquier imputación supondría un ritmo constante en el tramo faltante, que es justo la variable de interés (criterio similar al de Dong y Li, 2026). También se excluyen los corredores altamente entrenados o de élite según McKay et al. (2022), hombres con menos de 2:27:54 y mujeres con menos de 2:50:41 (0.34 % y 0.42 % de cada sexo), cuyo ritmo depende de corredores guía (*pacers*) y de la disputa de posiciones, y los 1 568 que superaron el tiempo límite oficial de 6 h 15 min (SCC Events, s. f.). Quedan `r miles(n_total)` corredores, `r n_crc` de ellos costarricenses.
 
 ## Ritmo relativo y clasificación
 
-Para cada corredor se calcula su ritmo medio de carrera (RMC), en minutos por kilómetro, y el ritmo de dos tramos: la salida (primeros 10 km) y el cierre (desde el km 35 hasta la meta, 7.195 km):
+Para cada corredor se calcula su ritmo medio de carrera (RMC) y el ritmo de la salida (primeros 10 km) y del cierre (km 35 a la meta), en minutos por kilómetro:
 
 $$RMC = \frac{t_{\text{final}}}{42.195} \qquad
 r_{\text{salida}} = \frac{t_{\text{10k}}}{10} \qquad
 r_{\text{cierre}} = \frac{t_{\text{final}} - t_{\text{35k}}}{7.195}$$
 
-donde $t$ es el tiempo acumulado, en minutos, en cada punto de control. Para comparar corredores de distintos niveles, el ritmo de cada tramo se expresa en relación con el ritmo medio del propio corredor, mediante el ritmo relativo:
+donde $t$ es el tiempo acumulado en minutos. Cada tramo se compara con el ritmo medio del propio corredor mediante el ritmo relativo:
 
 $$RP = 100 \times \frac{RMC - r_{\text{tramo}}}{RMC}$$
 
-Un valor positivo indica que el tramo se corrió más rápido que el ritmo medio, y uno negativo, más lento. Con base en este valor, cada corredor se clasifica en la salida y en el cierre en tres grupos: **por encima** del ritmo medio ($RP > 5\%$), **igual** ($-5\% \le RP \le 5\%$) y **por debajo** ($RP < -5\%$). Para el corredor promedio de la muestra, el margen de ±5 % equivale a unos 18 segundos por kilómetro.
+Un valor positivo indica que el tramo fue más rápido que el ritmo medio. Cada corredor se clasifica en la salida y en el cierre como **por encima** ($RP > 5\%$), **igual** ($-5\% \le RP \le 5\%$) o **por debajo** ($RP < -5\%$) de su ritmo medio; para el corredor promedio, ±5 % equivale a unos 18 s/km.
 
 ## Comparación entre grupos
 
-Se compara el tiempo final promedio de cada grupo por sexo y, como los corredores más lentos podrían salir rápido con más frecuencia, dentro de tres niveles según el tiempo final (3–4 h, 4–5 h y 5–6 h). Para evaluar si las diferencias son estadísticamente significativas, el tiempo final de cada grupo se compara con el del grupo que corrió a su ritmo medio mediante la prueba *t* de Welch, que no supone varianzas iguales entre grupos:
-
-$$t = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2}}}$$
-
-donde $\bar{x}$, $s^2$ y $n$ son el tiempo medio, la varianza y el número de corredores de cada grupo. Se usa un nivel de significancia de 0.05.
+Se compara el tiempo final promedio de cada grupo con el del grupo que corrió a su ritmo medio. Como los corredores más lentos podrían salir rápido con más frecuencia, la comparación se repite dentro de tres niveles de tiempo final (3–4 h, 4–5 h y 5–6 h).
 
 ## Chocar con la pared
 
-Para medir la pérdida de ritmo al final de la carrera, se calcula la caída de cada corredor en la segunda mitad con respecto a la primera:
+Se calcula cuánto más lenta fue la segunda mitad que la primera:
 
 $$\text{caída} = 100 \times \frac{(t_{\text{final}} - t_{\text{media}}) - t_{\text{media}}}{t_{\text{media}}}$$
 
-donde $t_{\text{media}}$ es el tiempo en la media maratón. Siguiendo a Deaner et al. (2015), se considera que un corredor "choca con la pared" cuando su segunda mitad es más de un 30 % más lenta que la primera, lo que suele implicar tramos caminando. Se excluyen de este análisis los 14 corredores sin tiempo registrado en la media maratón.
+donde $t_{\text{media}}$ es el tiempo en la media maratón. Siguiendo a Deaner et al. (2015), un corredor "choca con la pared" si su caída supera el 30 %. Se excluyen los 14 corredores sin tiempo en la media maratón.
 
 # Resultados
 
@@ -156,7 +154,7 @@ donde $t_{\text{media}}$ es el tiempo en la media maratón. Siguiendo a Deaner e
 #|   - "Últimos 7 km"
 #| layout-nrow: 2
 #| fig-width: 6.5
-#| fig-height: 2.7
+#| fig-height: 2.2
 
 # Estilo y etiquetas comunes a los dos histogramas ------------------------
 tema_hist <- theme_minimal(base_size = 10) +
@@ -209,7 +207,7 @@ La @fig-histogramas muestra cómo reparten el esfuerzo los corredores. En la sal
 #| label: fig-estrategias
 #| fig-cap: "Tiempo final promedio según cómo corrió cada persona los primeros 10 km y los últimos 7 km, comparado con su propio ritmo medio. Debajo de cada barra, el porcentaje de corredores del grupo; en azul, el grupo con el mejor tiempo. Fuente: elaboración propia con datos de Miller (2021)."
 #| fig-width: 6.5
-#| fig-height: 3.8
+#| fig-height: 3
 
 # Tiempo medio y diferencia con el grupo "Igual" por tramo y estrategia ---
 datos_fig <- berlin_limpio |>
@@ -249,70 +247,13 @@ ggplot(datos_fig,
         axis.text.x        = element_text(size = 9, lineheight = 0.9))
 ```
 
-```{r}
-#| label: tbl-welch
-#| tbl-cap: "Prueba t de Welch: diferencia en el tiempo final de cada grupo con respecto al grupo que corrió a su ritmo medio. Fuente: elaboración propia con datos de Miller (2021)."
-
-# prueba_welch(): compara el tiempo final de un grupo contra el grupo "Igual"
-# en un tramo ("salida" o "cierre") y devuelve la diferencia, t, gl y p
-prueba_welch <- function(tramo, grupo) {
-  x <- berlin_limpio$time_full[berlin_limpio[[tramo]] == grupo]
-  y <- berlin_limpio$time_full[berlin_limpio[[tramo]] == "Igual"]
-  r <- t.test(x, y)   # por defecto, t.test() aplica la corrección de Welch
-  tibble(dif = mean(x) - mean(y),
-         t   = unname(r$statistic),
-         gl  = unname(r$parameter),
-         p   = r$p.value)
-}
-
-tribble(
-  ~tramo,   ~grupo,
-  "salida", "Por encima",
-  "salida", "Por debajo",
-  "cierre", "Por encima",
-  "cierre", "Por debajo"
-) |>
-  mutate(res = map2(tramo, grupo, prueba_welch)) |>
-  unnest(res) |>
-  mutate(Tramo = if_else(tramo == "salida", "Primeros 10 km", "Últimos 7 km"),
-         Grupo = if_else(grupo == "Por encima", "Más rápido que su promedio",
-                         "Más lento que su promedio"),
-         `Diferencia (min)` = sprintf("%+.1f", dif),
-         t   = sprintf("%.1f", t),
-         gl  = miles(round(gl)),
-         p   = if_else(p < 0.001, "< 0.001", sprintf("%.3f", p))) |>
-  select(Tramo, Grupo, `Diferencia (min)`, t, gl, p) |>
-  knitr::kable(booktabs = TRUE, align = "llrrrr")
-```
-
-La @fig-estrategias muestra que, en ambos tramos, el mejor tiempo promedio corresponde a quienes corren a su ritmo medio. Quienes salen más rápido que su promedio terminan, en promedio, unos 41 minutos después que quienes salen a su ritmo, y quienes pierden ritmo en el cierre tardan unos 20 minutos más que quienes lo mantienen. Según la @tbl-welch, todas estas diferencias son estadísticamente significativas ($p < 0.001$): alejarse del propio ritmo medio, en cualquiera de las dos direcciones, se asocia con un tiempo final mayor.
-
-```{r}
-#| label: tbl-sexo
-#| tbl-cap: "Estrategia de salida por sexo: porcentaje de corredores que salió más rápido que su ritmo medio y tiempo final promedio según la estrategia. Fuente: elaboración propia con datos de Miller (2021)."
-
-# formato_tiempo(): minutos a "3 h 46 min"
-formato_tiempo <- function(min) sprintf("%d h %02d min", min %/% 60, round(min %% 60))
-
-berlin_limpio |>
-  group_by(sexo, salida) |>
-  summarise(n = n(), tiempo = mean(time_full), .groups = "drop_last") |>
-  summarise(`Salió rápido` = paste0(round(100 * n[salida == "Por encima"] / sum(n)), " %"),
-            `A su ritmo`   = formato_tiempo(tiempo[salida == "Igual"]),
-            `Más rápido`   = formato_tiempo(tiempo[salida == "Por encima"]),
-            `Diferencia`   = sprintf("%+.0f min",
-                                     tiempo[salida == "Por encima"] - tiempo[salida == "Igual"])) |>
-  rename(Sexo = sexo) |>
-  knitr::kable(booktabs = TRUE, align = "lrrrr")
-```
-
-La @tbl-sexo muestra que el patrón es el mismo en hombres y mujeres: casi la mitad de cada grupo sale más rápido que su ritmo medio y, en ambos casos, eso se asocia con terminar unos 41 minutos después que quienes salen a su ritmo.
+La @fig-estrategias muestra que, en ambos tramos, el mejor tiempo promedio corresponde a quienes corren a su ritmo medio. Quienes salen más rápido que su promedio terminan, en promedio, unos 41 minutos después que quienes salen a su ritmo, y quienes pierden ritmo en el cierre tardan unos 20 minutos más que quienes lo mantienen.
 
 ```{r}
 #| label: fig-niveles
 #| fig-cap: "Minutos adicionales en el tiempo final de quienes salieron más rápido o más lento que su ritmo medio en los primeros 10 km, comparados con quienes salieron a su ritmo, según el nivel del corredor. Entre paréntesis, el porcentaje de corredores de cada nivel que salió más rápido. Se omiten los grupos con menos de 100 corredores. Fuente: elaboración propia con datos de Miller (2021)."
 #| fig-width: 6.5
-#| fig-height: 3.2
+#| fig-height: 2.6
 
 # Diferencia con el grupo "Igual" dentro de cada nivel --------------------
 datos_nivel <- berlin_limpio |>
@@ -351,41 +292,38 @@ La @fig-estrategias compara corredores de niveles muy distintos, por lo que part
 
 ```{r}
 #| label: fig-pared
-#| fig-cap: "Porcentaje de corredores que chocó con la pared (segunda mitad más de un 30 % más lenta que la primera), según su estrategia en los primeros 10 km y su sexo. Se excluyen 14 corredores sin tiempo en la media maratón. Fuente: elaboración propia con datos de Miller (2021)."
+#| fig-cap: "Porcentaje de corredores que chocó con la pared (segunda mitad más de un 30 % más lenta que la primera), según su estrategia en los primeros 10 km. Se excluyen 14 corredores sin tiempo en la media maratón. Fuente: elaboración propia con datos de Miller (2021)."
 #| fig-width: 6.5
-#| fig-height: 3
+#| fig-height: 2.2
 
-# Porcentaje que choca con la pared por estrategia de salida y sexo -------
+# Porcentaje que choca con la pared por estrategia de salida ----------------
 datos_pared <- berlin_limpio |>
   filter(!is.na(pared)) |>
-  group_by(sexo, salida) |>
+  group_by(salida) |>
   summarise(pct = 100 * mean(pared), .groups = "drop") |>
   mutate(salida = recode(salida,
                          "Por debajo" = "Más lento que\nsu promedio",
                          "Igual"      = "A su ritmo\npromedio",
                          "Por encima" = "Más rápido que\nsu promedio"))
 
-ggplot(datos_pared, aes(x = salida, y = pct, fill = sexo)) +
-  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
-  geom_text(aes(label = sprintf("%.1f %%", pct)),
-            position = position_dodge(width = 0.7), vjust = -0.5, size = 3.2) +
-  scale_fill_manual(values = c(Hombres = "#2B5C8A", Mujeres = "#B5603A"), name = NULL) +
-  scale_y_continuous(limits = c(0, 18), expand = c(0, 0),
+ggplot(datos_pared, aes(x = salida, y = pct)) +
+  geom_col(fill = "#B5603A", width = 0.5) +
+  geom_text(aes(label = sprintf("%.1f %%", pct)), vjust = -0.5, size = 3.3) +
+  scale_y_continuous(limits = c(0, 15), expand = c(0, 0),
                      labels = function(y) paste0(y, " %")) +
   labs(x = "Estrategia en los primeros 10 km",
        y = "Chocó con la pared") +
   theme_minimal(base_size = 11) +
-  theme(legend.position    = "top",
-        panel.grid.major.x = element_blank(),
+  theme(panel.grid.major.x = element_blank(),
         panel.grid.minor   = element_blank())
 ```
 
-En total, el `r pct(berlin_limpio$pared)` de los corredores chocó con la pared. La @fig-pared muestra que esto ocurre casi exclusivamente entre quienes salieron más rápido que su ritmo medio: le pasó a 1 de cada 7 hombres y a 1 de cada 17 mujeres de ese grupo, mientras que entre quienes salieron a su ritmo prácticamente no ocurrió. Esta relación debe interpretarse con cautela, ya que salir rápido y desacelerar en la segunda mitad están relacionados por construcción; aun así, el resultado es consistente con lo reportado por Deaner et al. (2015), quienes encontraron que los hombres desaceleran de forma marcada con más frecuencia que las mujeres.
+En total, el `r pct(berlin_limpio$pared)` de los corredores chocó con la pared. La @fig-pared muestra que esto ocurre casi exclusivamente entre quienes salieron más rápido que su ritmo medio (`r pct(berlin_limpio$pared[berlin_limpio$salida == "Por encima"])` de ese grupo), mientras que entre quienes salieron a su ritmo prácticamente no ocurrió. Esta relación debe interpretarse con cautela, ya que salir rápido y desacelerar en la segunda mitad están relacionados por construcción.
 
 # Conclusiones
 
-- La estrategia que se asocia con mejores tiempos es correr parejo: tanto en la salida como en el cierre, quienes se mantienen cerca de su ritmo medio terminan antes, y las diferencias son estadísticamente significativas.
-- Salir demasiado rápido es el error más común (casi la mitad de los corredores, en ambos sexos); su costo crece en los corredores más lentos, que además son quienes más lo cometen, y es la principal vía para chocar con la pared, sobre todo en los hombres.
+- La estrategia que se asocia con mejores tiempos es correr parejo: tanto en la salida como en el cierre, quienes se mantienen cerca de su ritmo medio terminan antes que quienes se alejan de él.
+- Salir demasiado rápido es el error más común (casi la mitad de los corredores); su costo crece en los corredores más lentos, que además son quienes más lo cometen, y es la principal vía para chocar con la pared.
 - Como el análisis solo incluye a quienes terminaron la carrera y proviene de una sola maratón, el costo real de salir rápido podría ser mayor y los resultados no necesariamente se generalizan a recorridos menos planos.
 
 \newpage
