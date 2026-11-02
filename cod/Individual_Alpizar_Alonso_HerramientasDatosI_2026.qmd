@@ -1,8 +1,6 @@
 ---
 title: "¿Cuál es la mejor estrategia para correr un maratón?"
 author: "Alonso José Alpízar Brenes"
-date: today
-date-format: "D [de] MMMM [de] YYYY"
 lang: es
 format:
   pdf:
@@ -55,6 +53,8 @@ format:
           {\normalsize \@author\par}
           \vspace{0.1em}
           {\small\@date\par}
+          \vspace{0.1em}
+          {\footnotesize\color{gray}\url{https://github.com/AlonsoJAB/ca0204-proyecto-individual}\par}
           \end{center}
           \vspace{-0.4em}
           \noindent\rule{\linewidth}{0.4pt}\par
