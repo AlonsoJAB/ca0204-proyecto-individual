@@ -1,2 +1,6 @@
-tidyverse
-here
+# Paquetes necesarios para reproducir el proyecto
+# Instalar con: install.packages(c("tidyverse", "here", "knitr"))
+
+tidyverse   # manipulación de datos y gráficos (dplyr, ggplot2, readr…)
+here        # rutas relativas desde la raíz del proyecto
+knitr       # ejecuta el código del .qmd al renderizar y da formato a las tablas
