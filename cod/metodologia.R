@@ -52,11 +52,6 @@ berlin_limpio <- berlin_limpio |>
   mutate(nivel = cut(time_full, breaks = c(180, 240, 300, 360),
                      labels = c("3–4 h", "4–5 h", "5–6 h")))
 
-# Sexo con etiquetas en español --------------------------------------------
-berlin_limpio <- berlin_limpio |>
-  mutate(sexo = factor(gender, levels = c("M", "W"),
-                       labels = c("Hombres", "Mujeres")))
-
 # Caída de ritmo en la segunda mitad y "chocar con la pared" ---------------
 # caida: % en que la segunda mitad fue más lenta que la primera
 # pared: TRUE si la segunda mitad fue más de un 30 % más lenta
@@ -71,9 +66,8 @@ berlin_limpio <- berlin_limpio |>
 # Resumen ------------------------------------------------------------------
 berlin_limpio |> count(salida)
 berlin_limpio |> count(cierre)
-berlin_limpio |> count(sexo)
 sum(is.na(berlin_limpio$time_half))                # 14 sin media maratón
-mean(berlin_limpio$pared, na.rm = TRUE) * 100      # % que choca con la pared
+mean(berlin_limpio$pared, na.rm = TRUE) * 100      # % que choca con la pared (5.7 %)
 
 # Exportación --------------------------------------------------------------
 saveRDS(berlin_limpio, here("data", "berlin_metodologia.rds"))
