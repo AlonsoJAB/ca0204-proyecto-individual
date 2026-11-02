@@ -5,9 +5,10 @@
 # Fecha: octubre 2026
 #
 # Descripción: a partir de la base limpia, calcula el ritmo medio, el ritmo
-# de salida (0–10 km) y de cierre (35 km–meta), el ritmo relativo (RP) y
-# clasifica a cada corredor según su estrategia. Guarda el resultado en
-# data/berlin_metodologia.rds para usarlo en el informe.
+# de salida (0–10 km) y de cierre (35 km–meta), el ritmo relativo (RP),
+# clasifica a cada corredor según su estrategia y calcula la caída de ritmo
+# en la segunda mitad. Guarda el resultado en data/berlin_metodologia.rds
+# para usarlo en el informe.
 # ==========================================================================
 
 # Paquetes -----------------------------------------------------------------
@@ -51,9 +52,28 @@ berlin_limpio <- berlin_limpio |>
   mutate(nivel = cut(time_full, breaks = c(180, 240, 300, 360),
                      labels = c("3–4 h", "4–5 h", "5–6 h")))
 
+# Sexo con etiquetas en español --------------------------------------------
+berlin_limpio <- berlin_limpio |>
+  mutate(sexo = factor(gender, levels = c("M", "W"),
+                       labels = c("Hombres", "Mujeres")))
+
+# Caída de ritmo en la segunda mitad y "chocar con la pared" ---------------
+# caida: % en que la segunda mitad fue más lenta que la primera
+# pared: TRUE si la segunda mitad fue más de un 30 % más lenta
+#        (Deaner et al., 2015)
+# 14 corredores no tienen tiempo en la media maratón y quedan como NA
+umbral_pared <- 30
+
+berlin_limpio <- berlin_limpio |>
+  mutate(caida = 100 * ((time_full - time_half) - time_half) / time_half,
+         pared = caida > umbral_pared)
+
 # Resumen ------------------------------------------------------------------
 berlin_limpio |> count(salida)
 berlin_limpio |> count(cierre)
+berlin_limpio |> count(sexo)
+sum(is.na(berlin_limpio$time_half))                # 14 sin media maratón
+mean(berlin_limpio$pared, na.rm = TRUE) * 100      # % que choca con la pared
 
 # Exportación --------------------------------------------------------------
 saveRDS(berlin_limpio, here("data", "berlin_metodologia.rds"))
