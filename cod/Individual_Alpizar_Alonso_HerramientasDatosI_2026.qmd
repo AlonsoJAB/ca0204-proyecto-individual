@@ -1,5 +1,5 @@
 ---
-title: "¿Cuál es la mejor estrategia para correr un maratón?"
+title: "¿Cuál es la mejor estrategia para correr el Maratón de Berlín?"
 author: "Alonso José Alpízar Brenes"
 lang: es
 format:
@@ -86,18 +86,17 @@ miles <- function(x) format(x, big.mark = " ", scientific = FALSE)
 
 # Datos para el texto -----------------------------------------------------
 n_total <- nrow(berlin_limpio)
-n_crc   <- sum(berlin_limpio$nationality == "CRC", na.rm = TRUE)
 ```
 
 # Introducción
 
-En un maratón no basta con estar bien preparado: también importa cómo se reparte el esfuerzo. Muchos corredores recreativos salen más rápido de lo que pueden sostener y pagan el costo al final, cuando el ritmo cae de forma marcada ("chocar contra el muro").
+En un maratón no basta con estar bien preparado: también importa cómo se reparte el esfuerzo. Muchos corredores recreativos salen más rápido de lo que pueden sostener y pagan el costo al final, cuando el ritmo cae de forma marcada ("chocar con la pared").
 
 Este trabajo analiza esa decisión con los tiempos parciales de más de 120 000 corredores del Maratón de Berlín 2017–2019 (Miller, 2021), uno de los recorridos más planos del mundo, comparando el ritmo de cada corredor en los primeros 10 km y en los últimos 7.195 km con su propio ritmo medio.
 
 # Objetivo
 
-Determinar qué estrategia de ritmo se asocia con mejores tiempos finales en el Maratón de Berlín 2017–2019, comparando el ritmo de cada corredor en la salida y en el cierre con su ritmo medio de carrera, según su nivel.
+Determinar qué estrategia de ritmo se asocia con mejores tiempos finales en el Maratón de Berlín 2017–2019, comparando el ritmo de cada corredor en la salida y en el cierre con su propio ritmo medio, según su nivel.
 
 # Metodología
 
@@ -107,28 +106,27 @@ Se usan los resultados del Maratón de Berlín 2017, 2018 y 2019 publicados en e
 
 | Variable | Descripción |
 |:---|:---|
-| `gender` | Sexo del corredor (M, W) |
-| `nationality` | Nacionalidad (código de país, p. ej. CRC) |
-| `split_5k` … `split_40k` | Tiempo acumulado cada 5 km |
+| `gender` | Sexo del corredor (M, W), para el corte de élite |
+| `split_10k` | Tiempo acumulado en el km 10 |
+| `split_35k` | Tiempo acumulado en el km 35 |
 | `time_half` | Tiempo acumulado en la media maratón |
-| `time_full` | Tiempo final |
-| `year` | Año de la carrera |
+| `time_full` | Tiempo total |
 
 : Variables utilizadas. Fuente: elaboración propia con base en Miller (2021). {#tbl-variables}
 
-La base solo incluye a quienes terminaron la carrera. Se excluyen los 271 registros con algún parcial faltante (0.22 %); no se imputan porque cualquier imputación supondría un ritmo constante en el tramo faltante, que es justo la variable de interés (criterio similar al de Dong y Li, 2026). También se excluyen los corredores altamente entrenados o de élite según McKay et al. (2022), hombres con menos de 2:27:54 y mujeres con menos de 2:50:41 (0.34 % y 0.42 % de cada sexo), cuyo ritmo depende de corredores guía (*pacers*) y de la disputa de posiciones, y los 1 568 que superaron el tiempo límite oficial de 6 h 15 min (SCC Events, s. f.). Quedan `r miles(n_total)` corredores, `r n_crc` de ellos costarricenses.
+La base solo incluye a quienes terminaron la carrera. Se excluyen los 271 registros con algún parcial faltante (0.22 %); no se imputan porque cualquier imputación supondría un ritmo constante en el tramo faltante, que es justo la variable de interés (criterio similar al de Dong y Li, 2026). También se excluyen los corredores altamente entrenados o de élite según McKay et al. (2022), hombres con menos de 2:27:54 y mujeres con menos de 2:50:41 (0.34 % y 0.42 % de cada sexo), cuyo ritmo depende de corredores guía (*pacers*) y de la disputa de posiciones, y los 1 568 que superaron el tiempo límite oficial de 6 h 15 min (SCC Events, s. f.). Quedan `r miles(n_total)` corredores.
 
 ## Ritmo relativo y clasificación
 
-Para cada corredor se calcula su ritmo medio de carrera (RMC) y el ritmo de la salida (primeros 10 km) y del cierre (km 35 a la meta), en minutos por kilómetro:
+Para cada corredor se calcula su ritmo medio total (RMT) y el ritmo de la salida (primeros 10 km) y del cierre (km 35 a la meta), en minutos por kilómetro:
 
-$$RMC = \frac{t_{\text{final}}}{42.195} \qquad
+$$RMT = \frac{t_{\text{total}}}{42.195} \qquad
 r_{\text{salida}} = \frac{t_{\text{10k}}}{10} \qquad
-r_{\text{cierre}} = \frac{t_{\text{final}} - t_{\text{35k}}}{7.195}$$
+r_{\text{cierre}} = \frac{t_{\text{total}} - t_{\text{35k}}}{7.195}$$
 
 donde $t$ es el tiempo acumulado en minutos. Cada tramo se compara con el ritmo medio del propio corredor mediante el ritmo relativo:
 
-$$RP = 100 \times \frac{RMC - r_{\text{tramo}}}{RMC}$$
+$$RP = 100 \times \frac{RMT - r_{\text{tramo}}}{RMT}$$
 
 Un valor positivo indica que el tramo fue más rápido que el ritmo medio. Cada corredor se clasifica en la salida y en el cierre como **por encima** ($RP > 5\%$), **igual** ($-5\% \le RP \le 5\%$) o **por debajo** ($RP < -5\%$) de su ritmo medio; para el corredor promedio, ±5 % equivale a unos 18 s/km.
 
@@ -140,7 +138,7 @@ Se compara el tiempo final promedio de cada grupo con el del grupo que corrió a
 
 Se calcula cuánto más lenta fue la segunda mitad que la primera:
 
-$$\text{caída} = 100 \times \frac{(t_{\text{final}} - t_{\text{media}}) - t_{\text{media}}}{t_{\text{media}}}$$
+$$\text{caída} = 100 \times \frac{(t_{\text{total}} - t_{\text{media}}) - t_{\text{media}}}{t_{\text{media}}}$$
 
 donde $t_{\text{media}}$ es el tiempo en la media maratón. Siguiendo a Deaner et al. (2015), un corredor "choca con la pared" si su caída supera el 30 %. Se excluyen los 14 corredores sin tiempo en la media maratón.
 
@@ -308,7 +306,7 @@ datos_pared <- berlin_limpio |>
 
 ggplot(datos_pared, aes(x = salida, y = pct)) +
   geom_col(fill = "#B5603A", width = 0.5) +
-  geom_text(aes(label = sprintf("%.1f %%", pct)), vjust = -0.5, size = 3.3) +
+  geom_text(aes(label = if_else(pct < 1, sprintf("%.2f %%", pct), sprintf("%.1f %%", pct))), vjust = -0.5, size = 3.3) +
   scale_y_continuous(limits = c(0, 15), expand = c(0, 0),
                      labels = function(y) paste0(y, " %")) +
   labs(x = "Estrategia en los primeros 10 km",
@@ -318,7 +316,7 @@ ggplot(datos_pared, aes(x = salida, y = pct)) +
         panel.grid.minor   = element_blank())
 ```
 
-En total, el `r pct(berlin_limpio$pared)` de los corredores chocó con la pared. La @fig-pared muestra que esto ocurre casi exclusivamente entre quienes salieron más rápido que su ritmo medio (`r pct(berlin_limpio$pared[berlin_limpio$salida == "Por encima"])` de ese grupo), mientras que entre quienes salieron a su ritmo prácticamente no ocurrió. Esta relación debe interpretarse con cautela, ya que salir rápido y desacelerar en la segunda mitad están relacionados por construcción.
+En total, el `r sprintf("%.1f %%", 100 * mean(berlin_limpio$pared, na.rm = TRUE))` de los corredores chocó con la pared. La @fig-pared muestra que esto ocurre casi exclusivamente entre quienes salieron más rápido que su ritmo medio (`r sprintf("%.1f %%", 100 * mean(berlin_limpio$pared[berlin_limpio$salida == "Por encima"], na.rm = TRUE))` de ese grupo), mientras que entre quienes salieron a su ritmo prácticamente no ocurrió. Esta relación debe interpretarse con cautela, ya que salir rápido y desacelerar en la segunda mitad están relacionados por construcción.
 
 # Conclusiones
 
@@ -342,4 +340,4 @@ McKay, A. K. A., Stellingwerff, T., Smith, E. S., Martin, D. T., Mujika, I., Goo
 
 Miller, A. (2021). *marathon-results* \[Conjunto de datos\]. GitHub. Recuperado el 19 de octubre de 2026, de <https://github.com/AndrewMillerOnline/marathon-results>
 
-SCC Events. (s. f.). *BMW Berlin Marathon* \[Reglamento de participación\]. Recuperado el \[fecha\], de \[URL\]
+SCC Events. (s. f.). *BMW Berlin Marathon* \[Reglamento de participación\]. <https://www.bmw-berlin-marathon.com>

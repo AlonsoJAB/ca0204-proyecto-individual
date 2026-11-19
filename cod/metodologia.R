@@ -20,7 +20,7 @@ library(here)
 berlin_limpio <- readRDS(here("data", "berlin_limpio.rds"))
 
 # Ritmos en min/km ---------------------------------------------------------
-# rmc: ritmo medio de carrera; salida: 0–10 km; cierre: 35 km–meta (7.195 km)
+# rmc: ritmo medio total (RMT); salida: 0–10 km; cierre: 35 km–meta (7.195 km)
 berlin_limpio <- berlin_limpio |>
   mutate(rmc          = time_full / 42.195,
          ritmo_salida = split_10k / 10,
