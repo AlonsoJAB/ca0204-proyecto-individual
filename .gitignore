@@ -1,6 +1,17 @@
+# Sistema y RStudio
 .DS_Store
 .Rproj.user/
 .RData
 .Rhistory
+
+# Datos intermedios (se generan con limpieza.R y metodologia.R)
 data/*.rds
+
+# Archivos que genera Quarto al renderizar
 cod/*.pdf
+cod/*.log
+cod/*.tex
+cod/*_files/
+presentacion/*.html
+presentacion/*_files/
+

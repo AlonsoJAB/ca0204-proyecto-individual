@@ -1,6 +1,10 @@
 # Paquetes necesarios para reproducir el proyecto
-# Instalar con: install.packages(c("tidyverse", "here", "knitr"))
+# Instalar con: install.packages(c("tidyverse", "here", "knitr", "rmarkdown", "shiny"))
 
 tidyverse   # manipulación de datos y gráficos (dplyr, ggplot2, readr…)
 here        # rutas relativas desde la raíz del proyecto
-knitr       # ejecuta el código del .qmd al renderizar y da formato a las tablas
+knitr       # ejecuta el código de los .qmd al renderizar
+rmarkdown   # lo usa Quarto para renderizar el informe y la presentación
+shiny       # aplicación interactiva (app/app.R)
+
+# Además: Quarto (incluido en RStudio) para renderizar los .qmd
