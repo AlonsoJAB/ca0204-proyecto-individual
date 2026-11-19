@@ -1,0 +1,430 @@
+---
+title: "¿Cuál es la mejor estrategia para correr el Maratón de Berlín?"
+author: "Alonso José Alpízar Brenes"
+institute: "CA-0204 Herramientas de Ciencia de Datos I · Universidad de Costa Rica"
+lang: es
+title-slide-attributes:
+  data-background-image: img/portada.png
+  data-background-size: cover
+format:
+  revealjs:
+    theme: [default, ./estilo.scss]
+    include-in-header:
+      text: |
+        <style>
+          .reveal-viewport { background: #F3F8FC url("img/fondo.png") center bottom / cover no-repeat;
+                             image-rendering: pixelated; }
+          .reveal-viewport * { image-rendering: auto; }
+        </style>
+    slide-number: c/t
+    hash-type: number
+    transition: fade
+    background-transition: fade
+    width: 1280
+    height: 720
+    center: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+# presentacion.qmd — Proyecto individual CA-0204 (UCR)
+# Autor: Alonso José Alpízar Brenes · noviembre 2026
+# Presentación en Quarto (revealjs). Lee los datos de ../data/ y aplica la
+# misma limpieza del informe, así que todos los números se calculan al renderizar.
+# Estilo en estilo.scss e imágenes de fondo en img/ (en esta misma carpeta).
+# Renderizar con el botón Render de RStudio (necesita internet para las
+# fórmulas y la letra).
+#
+library(dplyr)
+library(ggplot2)
+library(here)
+
+# Paleta "Berlín de día" (la misma de la app Shiny)
+fondo <- "#F3F8FC"; panel <- "#FFFFFF"; borde <- "#D3E2EF"; texto <- "#1E2B45"
+suave <- "#5B6B88"; rapido <- "#E5484D"; parejo <- "#2F80ED"; oro <- "#B07A1E"
+violeta <- "#3E9B5B"; lento <- "#9AA4B5"
+col_clase <- c("Por debajo" = lento, "Igual" = parejo, "Por encima" = rapido)
+
+knitr::opts_chunk$set(dev.args = list(bg = "transparent"))
+tema <- theme_minimal(base_size = 17, base_family = "sans") +
+  theme(plot.background  = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid.major = element_line(colour = borde),
+        panel.grid.minor = element_blank(),
+        axis.text  = element_text(colour = suave),
+        axis.title = element_text(colour = suave),
+        strip.text = element_text(colour = texto, face = "bold", hjust = 0, size = 17),
+        legend.position = "none")
+
+# Datos y limpieza (igual que limpieza.R y metodologia.R)
+a_min <- function(x) {
+  p <- strsplit(x, ":", fixed = TRUE)
+  vapply(p, function(v) if (length(v) == 3) sum(as.numeric(v) * c(60, 1, 1/60)) else NA_real_,
+         numeric(1))
+}
+parciales <- c("split_5k", "split_10k", "split_15k", "split_20k",
+               "split_25k", "split_30k", "split_35k", "split_40k")
+clasif <- function(rp) {
+  factor(case_when(rp > 5 ~ "Por encima", rp < -5 ~ "Por debajo", TRUE ~ "Igual"),
+         levels = c("Por debajo", "Igual", "Por encima"))
+}
+
+crudos <- lapply(2017:2019, function(a) {
+  readr::read_csv(here("data", paste0("berlin_", a, ".csv")),
+                  col_types = readr::cols(.default = "c"))
+}) |> bind_rows()
+
+berlin <- crudos |>
+  mutate(across(c(time_full, time_half, all_of(parciales)), a_min)) |>
+  filter(if_all(c(time_full, all_of(parciales)), ~ !is.na(.x))) |>
+  filter(!(gender == "M" & time_full < 147.9),
+         !(gender %in% c("W", "F") & time_full < 170.7),
+         time_full <= 375) |>
+  mutate(rmc    = time_full / 42.195,
+         rp_sal = 100 * (rmc - split_10k / 10) / rmc,
+         rp_cie = 100 * (rmc - (time_full - split_35k) / 7.195) / rmc,
+         salida = clasif(rp_sal),
+         cierre = clasif(rp_cie),
+         nivel  = cut(time_full, c(180, 240, 300, 360), labels = c("3–4 h", "4–5 h", "5–6 h")),
+         caida  = 100 * ((time_full - time_half) - time_half) / time_half,
+         pared  = !is.na(caida) & caida > 30)
+
+n_total <- nrow(berlin)
+pct <- function(x) sprintf("%.0f %%", 100 * mean(x))
+mil <- function(x) format(x, big.mark = " ")
+```
+
+## Objetivo y datos {.objetivo-slide}
+
+::: tarjeta
+[Objetivo]{.tit}
+
+Determinar qué estrategia de ritmo se asocia con mejores tiempos en el **Maratón de Berlín**, comparando la [salida]{.c-o} y el [cierre]{.c-o} de cada corredor con **su propio ritmo medio**, según su nivel.
+:::
+
+```{=html}
+<div class="embudo">
+  <div class="paso"><b>123 797</b>corredores</div><div class="flecha">➜</div>
+  <div class="paso"><b>−271</b>parciales faltantes</div><div class="flecha">➜</div>
+  <div class="paso"><b>−446</b>élite (McKay, 2022)</div><div class="flecha">➜</div>
+  <div class="paso"><b>−1 568</b>más de 6 h 15 min</div><div class="flecha">➜</div>
+  <div class="paso fin"><b>121 512</b>corredores</div>
+</div>
+<div class="variables tarjeta">
+  <div class="v-tit">Variables que usamos de cada corredor</div>
+  <div class="grupo">
+    <span class="var">sexo</span><span class="var">km 10</span><span class="var">km 35</span>
+    <span class="var">media maratón</span><span class="var">tiempo total</span></div>
+</div>
+```
+
+
+```{r}
+#| label: ejemplo-metodo
+reloj <- function(t) { s <- round(t * 60); sprintf("%d:%02d:%02d", s %/% 3600, (s %% 3600) %/% 60, s %% 60) }
+ritmo <- function(v) { s <- round(v * 60); sprintf("%d:%02d", s %/% 60, s %% 60) }
+set.seed(17)                                   # corredor elegido al azar
+ej <- berlin |> filter(!is.na(nivel)) |> slice_sample(n = 1)
+ej_rs <- ej$split_10k / 10
+ej_rc <- (ej$time_full - ej$split_35k) / 7.195
+seg <- function(t) gsub(" ", "\\\\,", format(round(t * 60), big.mark = " "))   # minutos -> segundos
+num <- function(x) sprintf("%.1f", x)
+ej_sal <- c("Por debajo" = "más lento que su promedio", "Igual" = "a su ritmo",
+            "Por encima" = "más rápido que su promedio")
+```
+
+## Método: comparar a cada corredor consigo mismo
+
+:::: {.columns}
+::: {.column style="width:46%;font-size:.8em"}
+**1. Ritmo medio total**
+$$RMT = \frac{t_{\text{total}}}{42.195}$$
+
+**2. Ritmo de cada tramo**
+$$r_{\text{salida}} = \frac{t_{10k}}{10}$$
+$$r_{\text{cierre}} = \frac{t_{\text{total}} - t_{35k}}{7.195}$$
+
+**3. Ritmo relativo**
+$$RP = 100 \times \frac{RMT - r_{\text{tramo}}}{RMT}$$
+:::
+
+::: {.column style="width:54%;font-size:.62em"}
+::: {.tarjeta .ejemplo}
+[Ejemplo: `r paste(ej$first_name, ej$last_name)`]{.tit}
+
+[Berlín `r ej$year` · tiempo total `r reloj(ej$time_full)` = `r mil(round(ej$time_full * 60))` s]{.suave}
+
+[1. Ritmo medio total]{.paso-t}
+$$RMT = \frac{`r seg(ej$time_full)`}{42.195} = `r num(ej$rmc * 60)`\ \text{s/km}\ \ (`r sub(':', '{:}', ritmo(ej$rmc))`\ \text{/km})$$
+
+[2. Ritmo de cada tramo]{.paso-t}
+$$r_{\text{salida}} = \frac{`r seg(ej$split_10k)`}{10} = `r num(ej_rs * 60)`\ \text{s/km}$$
+$$r_{\text{cierre}} = \frac{`r seg(ej$time_full)` - `r seg(ej$split_35k)`}{7.195} = `r num(ej_rc * 60)`\ \text{s/km}$$
+
+[3. Ritmo relativo]{.paso-t}
+$$RP_{\text{salida}} = 100 \times \frac{`r num(ej$rmc * 60)` - `r num(ej_rs * 60)`}{`r num(ej$rmc * 60)`} = \mathbf{`r sprintf("%+.1f", ej$rp_sal)`\,\%}$$
+$$RP_{\text{cierre}} = 100 \times \frac{`r num(ej$rmc * 60)` - `r num(ej_rc * 60)`}{`r num(ej$rmc * 60)`} = \mathbf{`r sprintf("%+.1f", ej$rp_cie)`\,\%}$$
+:::
+:::
+::::
+
+## Clasificación y pared
+
+:::: {.grid2}
+::: tarjeta
+[4. Clasificación]{.tit}
+
+Según el ritmo relativo (RP) de cada tramo:
+
+```{=html}
+<div class="clasif">
+  <div style="width:35%;background:#9AA4B5;color:#1E2B45">más lento</div>
+  <div style="width:30%;background:#2F80ED">a su ritmo</div>
+  <div style="width:35%;background:#E5484D">más rápido</div>
+</div>
+<div class="suave" style="position:relative;height:1.4em;font-size:.75em">
+  <span style="position:absolute;left:35%;transform:translateX(-50%)">−5 %</span>
+  <span style="position:absolute;left:65%;transform:translateX(-50%)">+5 %</span></div>
+```
+
+RP positivo = ese tramo fue [más rápido]{.c-r} que su promedio.
+
+[±5 % ≈ 18 s/km para el corredor promedio.]{.suave}
+:::
+
+::: tarjeta
+[5. Chocar con la pared]{.tit}
+
+Momento en que el corredor **agota sus reservas de energía** (glucógeno) y su ritmo **se desploma**, casi siempre después del km 30.
+
+Para medirlo:
+$$\text{caída} = 100 \times \frac{t_{\text{2.ª mitad}} - t_{\text{1.ª mitad}}}{t_{\text{1.ª mitad}}} > 30\,\%$$
+
+[Deaner et al. (2015)]{.suave}
+:::
+::::
+
+::: {.tarjeta .ejemplo-fila}
+[Ejemplo: `r paste(ej$first_name, ej$last_name)`]{.tit}
+
+```{=html}
+<div class="chips">
+```
+[Salida `r sprintf("%+.1f %%", ej$rp_sal)` → **`r ej_sal[as.character(ej$salida)]`**]{.chip}
+[Cierre `r sprintf("%+.1f %%", ej$rp_cie)` → **`r ej_sal[as.character(ej$cierre)]`**]{.chip}
+[Caída `r sprintf("%+.1f %%", ej$caida)` → **`r ifelse(ej$pared, "chocó con la pared", "no chocó con la pared")`**]{.chip}
+```{=html}
+</div>
+```
+:::
+
+## Resultado 1: casi la mitad sale demasiado rápido
+
+```{r}
+#| label: histo-prep
+# Barras de 1 punto de ritmo relativo (los % de arriba usan a todos los corredores)
+por_celda <- 150
+rango <- list(sal = c(-15, 25), cie = c(-35, 20))
+
+celdas_de <- function(rp, r) {
+  b <- floor(rp[rp >= r[1] & rp < r[2]])   # los extremos fuera del rango no se dibujan
+  tibble(b = b) |> count(b) |>
+    mutate(clase = clasif(b + 0.5)) |>
+    rowwise() |>
+    reframe(b, clase, k = seq_len(ceiling(n / por_celda)),
+            alto = pmin(1, n / por_celda - (k - 1)))
+}
+
+histo <- function(rp, r) {
+  d <- celdas_de(rp, r)
+  ggplot(d) +
+    annotate("rect", xmin = -5, xmax = 5, ymin = -Inf, ymax = Inf, fill = parejo, alpha = .06) +
+    geom_vline(xintercept = c(-5, 5), colour = parejo, linetype = "dashed", linewidth = .4, alpha = .7) +
+    geom_col(data = count(d, b, clase, wt = alto), aes(x = b + .5, y = n, fill = clase), width = .88) +
+    scale_fill_manual(values = col_clase) +
+    scale_x_continuous(breaks = seq(-30, 20, 10), limits = r,
+                       labels = function(v) ifelse(v > 0, paste0("+", v, " %"), paste0(v, " %"))) +
+    scale_y_continuous(expand = expansion(mult = c(0, .04))) +
+    labs(x = NULL, y = NULL) +
+    tema +
+    theme(panel.grid = element_blank(), panel.grid.major = element_blank(), axis.text.y = element_blank(),
+          axis.text.x = element_text(size = 15, colour = suave),
+          axis.line.x = element_line(colour = borde, linewidth = .8),
+          plot.margin = margin(0, 4, 0, 4))
+}
+
+barra <- function(cl) {
+  p <- round(100 * prop.table(table(cl)))
+  sprintf('<div class="prop">
+  <div style="color:#7B879B"><b>%d %%</b><span>más lento</span></div>
+  <div style="color:#2F80ED"><b>%d %%</b><span>a su ritmo</span></div>
+  <div style="color:#E5484D"><b>%d %%</b><span>más rápido</span></div></div>',
+          p[[1]], p[[2]], p[[3]])
+}
+```
+
+:::: {.columns}
+::: {.column width="49%"}
+[Primeros 10 km]{.h-tramo}
+
+`r barra(berlin$salida)`
+
+```{r}
+#| fig-width: 6.6
+#| fig-height: 3.9
+histo(berlin$rp_sal, rango$sal)
+```
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="49%"}
+[Últimos 7 km]{.h-tramo}
+
+`r barra(berlin$cierre)`
+
+```{r}
+#| fig-width: 6.6
+#| fig-height: 3.9
+histo(berlin$rp_cie, rango$cie)
+```
+:::
+::::
+
+En la salida, el [`r pct(berlin$salida == "Por encima")`]{.c-r} va más rápido que su promedio; en el cierre, el [`r pct(berlin$cierre == "Por debajo")`]{.c-r} va más lento.
+
+## Resultado 2: correr parejo da el mejor tiempo
+
+```{r}
+#| label: estrategias
+#| fig-width: 13
+#| fig-height: 5.6
+#| fig-align: center
+barras <- bind_rows(
+  berlin |> group_by(clase = salida) |> summarise(t = mean(time_full), n = n()) |>
+    mutate(tramo = "Primeros 10 km"),
+  berlin |> group_by(clase = cierre) |> summarise(t = mean(time_full), n = n()) |>
+    mutate(tramo = "Últimos 7 km")
+) |>
+  group_by(tramo) |>
+  mutate(p = n / sum(n),
+         extra = t - t[clase == "Igual"],
+         etq = ifelse(clase == "Igual", paste0("el mejor\n", reloj(t)),
+                      sprintf("+%.0f min\n%s", extra, reloj(t))),
+         eje = paste0(c("Más lento", "A su ritmo", "Más rápido")[as.integer(clase)],
+                      "\n", round(100 * p), " %")) |>
+  ungroup() |>
+  arrange(tramo, clase) |>
+  mutate(eje = factor(paste(tramo, eje, sep = "|"), levels = unique(paste(tramo, eje, sep = "|"))))
+
+ggplot(barras, aes(eje, t / 60, fill = clase == "Igual")) +
+  geom_col(width = .55) +
+  geom_text(aes(label = etq, colour = clase == "Igual"), vjust = -0.3,
+            fontface = "bold", size = 5, lineheight = .9) +
+  facet_wrap(~tramo, scales = "free_x") +
+  scale_x_discrete(labels = function(x) sub(".*\\|", "", x)) +
+  scale_fill_manual(values = c(`TRUE` = parejo, `FALSE` = lento)) +
+  scale_colour_manual(values = c(`TRUE` = parejo, `FALSE` = rapido)) +
+  scale_y_continuous(limits = c(0, 5.7), breaks = 0:5) +
+  labs(x = NULL, y = "Tiempo final promedio (h)") +
+  tema
+```
+
+## Resultado 3: comparando corredores de nivel parecido
+
+```{r}
+#| label: niveles
+#| fig-width: 12
+#| fig-height: 5
+#| fig-align: center
+niveles <- berlin |>
+  filter(!is.na(nivel), salida != "Por debajo") |>
+  group_by(nivel) |>
+  summarise(extra = mean(time_full[salida == "Por encima"]) - mean(time_full[salida == "Igual"]),
+            p_rapido = mean(salida == "Por encima"))
+
+ggplot(niveles, aes(nivel, extra)) +
+  geom_col(fill = rapido, width = .5) +
+  geom_text(aes(label = sprintf("+%.0f min", extra)), vjust = -0.5, colour = rapido,
+            fontface = "bold", size = 7) +
+  scale_x_discrete(labels = function(x) paste0(x, "\n", round(100 * niveles$p_rapido), " % sale rápido")) +
+  scale_y_continuous(limits = c(0, max(niveles$extra) * 1.25)) +
+  labs(x = NULL, y = "Minutos extra vs. salir a su ritmo") +
+  tema
+```
+
+Dentro de cada nivel el costo es menor que los +41 min, pero [existe siempre y crece en los menos rápidos]{.c-r}.
+
+```{r}
+#| label: pared
+p_pared <- berlin |> group_by(salida) |>
+  summarise(p = 100 * mean(pared), n = n(), chocaron = sum(pared))
+fila <- function(cl) p_pared[p_pared$salida == cl, ]
+pct2 <- function(x) if (x < 1) sprintf("%.2f %%", x) else sprintf("%.1f %%", x)
+lo <- fila("Por debajo"); ig <- fila("Igual"); ra <- fila("Por encima")
+```
+
+## Resultado 4: ¿quién choca con la pared?
+
+:::: {.grid3}
+::: {.tarjeta .tarjeta-num style="border-top:4px solid #5B6B88"}
+[Salieron más lento]{.etq}
+
+[`r pct2(lo$p)`]{.grande-num style="color:#5B6B88"}
+
+[chocó con la pared]{.suave}
+
+[`r mil(lo$chocaron)` de `r mil(lo$n)` corredores]{.chico}
+:::
+
+::: {.tarjeta .tarjeta-num style="border-top:4px solid #2F80ED"}
+[Salieron a su ritmo]{.etq}
+
+[`r pct2(ig$p)`]{.grande-num .c-p}
+
+[chocó con la pared]{.suave}
+
+[`r mil(ig$chocaron)` de `r mil(ig$n)` corredores]{.chico}
+:::
+
+::: {.tarjeta .tarjeta-num style="border-top:4px solid #E5484D"}
+[Salieron más rápido]{.etq}
+
+[`r pct2(ra$p)`]{.grande-num .c-r}
+
+[chocó con la pared]{.suave}
+
+[`r mil(ra$chocaron)` de `r mil(ra$n)` corredores]{.chico}
+:::
+::::
+
+::: {.nota-centro}
+Salida comparada con su propio ritmo medio (±5 %). Chocar con la pared = segunda mitad más de 30 % más lenta. En total chocó el [`r sprintf("%.1f %%", 100 * mean(berlin$pared))`]{.c-o} de los corredores.
+:::
+
+## Conclusiones
+
+1. **Correr parejo** es la estrategia asociada con mejores tiempos en Berlín, tanto en la salida como en el cierre.
+2. **Salir demasiado rápido** es el error más común: le cuesta más a los corredores menos rápidos, que además lo cometen más, y es la principal vía para chocar con la pared.
+3. **Limitaciones:** solo incluye a quienes terminaron y una sola maratón muy plana; el costo real de salir rápido podría ser mayor.
+
+::: tarjeta
+[Consejo práctico]{.tit}
+
+Salir a tu ritmo objetivo (±5 %) y guardar energía para los últimos 7 km: ahí es donde más corredores pierden ritmo.
+:::
+
+## {.center}
+
+::: {style="text-align:center"}
+[¡Gracias!]{.grande .c-o}
+
+¿Preguntas?
+
+[github.com/AlonsoJAB/ca0204-proyecto-individual]{.suave style="font-size:.6em"}
+:::

@@ -1,0 +1,172 @@
+/*-- scss:defaults --*/
+// estilo.scss — estilo de presentacion.qmd (Proyecto individual CA-0204, UCR)
+// Paleta "Berlín de día", la misma de la app Shiny (app/app.R).
+// azul = línea azul del maratón, rojo = cordón, dorado = Puerta de Brandeburgo
+$fondo:   #F3F8FC;
+$panel:   rgba(255, 255, 255, .88);
+$borde:   #D3E2EF;
+$texto:   #1E2B45;
+$suave:   #5B6B88;
+$rapido:  #E5484D;
+$parejo:  #2F80ED;
+$oro:     #B07A1E;
+$violeta: #3E9B5B;
+
+$body-bg: $fondo;
+$body-color: $texto;
+$link-color: $oro;
+$presentation-heading-color: $texto;
+$presentation-heading-font-weight: 800;
+$presentation-font-size-root: 34px;
+$font-family-sans-serif: "Outfit", "Helvetica Neue", Arial, sans-serif;
+$presentation-heading-font: "Outfit", "Helvetica Neue", Arial, sans-serif;
+$code-color: $oro;
+
+/*-- scss:rules --*/
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
+.reveal .slides section h2 {
+  font-size: 1.35em;
+  padding-bottom: .25em;
+  margin-bottom: .6em;
+  border-bottom: none;
+  display: inline-block;
+  background-image: repeating-linear-gradient(90deg, $rapido 0 14px, #FFFFFF 14px 28px);
+  background-size: 100% 5px; background-repeat: no-repeat; background-position: left bottom;
+}
+.reveal .progress { color: $parejo; }
+.reveal .slide-number { color: $suave; background: transparent; }
+
+// colores de texto
+.c-r { color: $rapido; font-weight: 700; }
+.c-p { color: $parejo; font-weight: 700; }
+.c-o { color: $oro;    font-weight: 700; }
+.c-v { color: $violeta; font-weight: 700; }
+.suave { color: $suave; }
+.fuente { color: $suave; font-size: .5em; margin-top: .4em; }
+
+// portada
+.reveal .title-slide h1.title { font-size: 1.9em; line-height: 1.15; }
+.reveal .title-slide .subtitle { color: $oro; font-size: 1.0em; }
+.reveal .title-slide .quarto-title-author-name { color: $texto; }
+
+// números grandes
+.gigante { font-size: 3.6em; font-weight: 800; line-height: 1; }
+.grande  { font-size: 2.3em; font-weight: 800; line-height: 1.05; }
+
+// tarjetas
+.tarjeta {
+  background: $panel; border: 1px solid $borde; border-radius: 18px;
+  padding: .6em .8em; margin: .3em 0;
+}
+.tit { color: $oro; font-weight: 800; font-size: .8em; }
+.tarjeta p { margin: .2em 0; }
+
+// embudo de limpieza
+.embudo { display: flex; gap: .5em; align-items: stretch; justify-content: center; margin: .8em 0; }
+.paso {
+  background: $panel; border: 1px solid $borde; border-radius: 14px;
+  padding: .45em .6em; text-align: center; font-size: .6em; min-width: 6.5em;
+}
+.paso b { display: block; font-size: 1.5em; }
+.paso.fin { background: $oro; color: #FFFFFF; border-color: $oro; }
+.flecha { align-self: center; color: $suave; font-size: .8em; }
+
+// barra de clasificación
+.clasif { display: flex; height: 1.1em; border-radius: 8px; overflow: hidden; margin: .4em 0 .2em; }
+.clasif div { display: flex; align-items: center; justify-content: center; font-size: .5em; font-weight: 700; color: #FFFFFF; }
+
+// tablas
+.reveal table { font-size: .7em; }
+.reveal table th { color: $oro; border-bottom: 1px solid $borde; }
+.reveal table td { border-bottom: 1px solid $borde; }
+
+.reveal ul li::marker, .reveal ol li::marker { color: $oro; font-weight: 800; }
+
+// tarjeta del ejemplo con fórmulas
+.ejemplo .paso-t { display: block; color: $parejo; font-weight: 700; margin-top: .7em; }
+.ejemplo mjx-container[display="true"] { margin: .35em 0 !important; }
+.ejemplo .MathJax { color: $texto; }
+
+// espaciado de la diapositiva "Objetivo y datos"
+.objetivo-slide .tarjeta { padding: .7em 1.2em; margin: .2em 0 .8em 0; line-height: 1.35; font-size: .88em; }
+.objetivo-slide .tit { display: block; margin-bottom: .45em; }
+.objetivo-slide .embudo { gap: .6em; margin: 0 0 .7em 0; }
+.objetivo-slide .paso { padding: .8em 1em; border-radius: 16px; line-height: 1.35; white-space: nowrap; }
+.objetivo-slide .paso b { margin-bottom: .2em; }
+.objetivo-slide .fuente { line-height: 1.5; background: rgba(255,255,255,.85); padding: .25em .7em; border-radius: 8px; display: inline-block; margin-top: 0; }
+
+
+// diapositiva "Clasificación y pared"
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .9em; margin-top: .2em; font-size: .7em; }
+.grid2 .tarjeta { padding: .9em 1.1em; line-height: 1.45; margin: 0; }
+.grid2 .tarjeta p { margin: .5em 0; }
+.grid2 .tit { display: block; font-size: 1.1em; margin-bottom: .2em; }
+.grid2 .clasif { height: 1.7em; margin-top: .7em; }
+.grid2 .clasif div { font-size: .75em; }
+.grid2 mjx-container[display="true"] { margin: .6em 0 !important; }
+.ejemplo-fila { margin-top: .9em !important; padding: .7em 1.1em !important; font-size: .7em; }
+.ejemplo-fila .tit { font-size: 1.1em; }
+.chips { display: flex; gap: .8em; flex-wrap: wrap; margin-top: .4em; }
+.chip { background: $fondo; border: 1px solid $borde; border-radius: 999px; padding: .35em 1em; }
+
+// diapositiva "Resultado 4"
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9em; margin-top: .4em; }
+.tarjeta-num { text-align: center; padding: 1em .8em 1.1em !important; margin: 0 !important; }
+.tarjeta-num p { margin: .35em 0; }
+.tarjeta-num .etq { font-size: .7em; font-weight: 700; color: $texto; line-height: 1.3; }
+.grande-num { display: block; font-size: 2.4em; font-weight: 800; line-height: 1.05; margin: .15em 0; }
+.tarjeta-num .suave { font-size: .6em; }
+.tarjeta-num .chico { font-size: .5em; color: $suave; }
+.nota-centro { text-align: center; font-size: .6em; color: $suave; margin-top: 1.4em; }
+
+// fondo pixel art de Berlín
+.reveal-viewport { background-color: #F3F8FC; }
+.reveal .slide-background-content { image-rendering: pixelated; }
+.tarjeta, .paso { box-shadow: 0 4px 14px rgba(27, 37, 64, .08); backdrop-filter: blur(2px); }
+
+.reveal .slides section h2 + * mjx-container[display="true"] { margin: .3em 0; }
+
+// detalles a tono con el fondo
+.reveal .slides section h2 { color: #1E3A5F; }
+.tit { color: $oro !important; }
+.tarjeta { border-top: 4px solid $parejo; }
+.tarjeta-num { border-top-width: 4px !important; }
+
+.paso { border-top: 3px solid $parejo; }
+.paso.fin { border-top-color: $oro; }
+.reveal table th { color: #1E3A5F; }
+
+// variables del conjunto de datos
+.objetivo-slide .variables { display: flex; flex-direction: column; gap: .4em; font-size: .5em !important; margin: 0 0 .6em 0 !important; padding: .7em 1.2em !important; }
+.variables .v-tit { font-weight: 800; color: #1E3A5F; font-size: 1.1em; margin-bottom: .1em; }
+.variables .grupo { display: flex; flex-wrap: wrap; align-items: center; gap: .45em; }
+.variables .g-tit { font-weight: 800; color: $oro; min-width: 5.5em; }
+.variables .var { background: $panel; border: 1px solid $borde; border-radius: 999px; padding: .25em .85em; }
+
+// portada: título centrado sobre el cielo, sin recuadro
+.reveal .slides section.quarto-title-block {
+  background: none !important; box-shadow: none !important; border: none !important;
+  width: 100% !important; left: 0 !important; top: 27% !important; padding: 0 6% !important; box-sizing: border-box !important; margin: 0 !important;
+  text-align: center; }
+.reveal .slides section.quarto-title-block h1.title {
+  font-size: 1.75em; line-height: 1.12; color: #1E2B45; margin: 0 auto .35em;
+  text-shadow: 0 0 6px rgba(255,255,255,.95), 0 0 14px rgba(255,255,255,.85), 0 3px 0 rgba(255,255,255,.9); }
+.reveal .slides section.quarto-title-block .subtitle {
+  color: #1E3A5F !important; font-weight: 600; font-size: .9em;
+  text-shadow: 0 0 6px rgba(255,255,255,.95), 0 0 12px rgba(255,255,255,.8); }
+.reveal .slides section.quarto-title-block .quarto-title-authors,
+.reveal .slides section.quarto-title-block .quarto-title-author-name,
+.reveal .slides section.quarto-title-block .quarto-title-affiliation,
+.reveal .slides section.quarto-title-block p {
+  color: #1E2B45 !important; text-align: center; justify-content: center;
+  text-shadow: 0 0 6px rgba(255,255,255,.95), 0 0 12px rgba(255,255,255,.8); }
+.variables .var i { color: #5B6B88; font-style: normal; font-size: .85em; }
+
+// Resultado 1: barras de proporción sobre los histogramas
+.h-tramo { display: block; text-align: center; font-weight: 800; font-size: .8em; color: #1E3A5F; }
+.prop { display: flex; justify-content: space-around; margin: .1em 0 0; }
+.prop div { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.prop b { font-size: 1.15em; font-weight: 800; text-shadow: 0 0 8px rgba(255,255,255,.9); }
+.prop span { font-size: .45em; font-weight: 700; margin-top: .15em; }
+.pastilla { background: rgba(255,255,255,.9); padding: .2em .9em; border-radius: 999px; color: #5B6B88; }
