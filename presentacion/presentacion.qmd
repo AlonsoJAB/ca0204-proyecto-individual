@@ -117,7 +117,7 @@ Determinar qué estrategia de ritmo se asocia con mejores tiempos en el **Marat�
 <div class="variables tarjeta">
   <div class="v-tit">Variables que usamos de cada corredor</div>
   <div class="grupo">
-    <span class="var">sexo</span><span class="var">km 10</span><span class="var">km 35</span>
+    <span class="var">km 10</span><span class="var">km 35</span>
     <span class="var">media maratón</span><span class="var">tiempo total</span></div>
 </div>
 ```
@@ -149,7 +149,7 @@ $$r_{\text{salida}} = \frac{t_{10k}}{10}$$
 $$r_{\text{cierre}} = \frac{t_{\text{total}} - t_{35k}}{7.195}$$
 
 **3. Ritmo relativo**
-$$RP = 100 \times \frac{RMT - r_{\text{tramo}}}{RMT}$$
+$$RR = 100 \times \frac{RMT - r_{\text{tramo}}}{RMT}$$
 :::
 
 ::: {.column style="width:54%;font-size:.62em"}
@@ -162,12 +162,12 @@ $$RP = 100 \times \frac{RMT - r_{\text{tramo}}}{RMT}$$
 $$RMT = \frac{`r seg(ej$time_full)`}{42.195} = `r num(ej$rmc * 60)`\ \text{s/km}\ \ (`r sub(':', '{:}', ritmo(ej$rmc))`\ \text{/km})$$
 
 [2. Ritmo de cada tramo]{.paso-t}
-$$r_{\text{salida}} = \frac{`r seg(ej$split_10k)`}{10} = `r num(ej_rs * 60)`\ \text{s/km}$$
-$$r_{\text{cierre}} = \frac{`r seg(ej$time_full)` - `r seg(ej$split_35k)`}{7.195} = `r num(ej_rc * 60)`\ \text{s/km}$$
+$$r_{\text{salida}} = \frac{`r seg(ej$split_10k)`}{10} = `r num(ej_rs * 60)`\ \text{s/km}\ \ (`r sub(':', '{:}', ritmo(ej_rs))`\ \text{/km})$$
+$$r_{\text{cierre}} = \frac{`r seg(ej$time_full)` - `r seg(ej$split_35k)`}{7.195} = `r num(ej_rc * 60)`\ \text{s/km}\ \ (`r sub(':', '{:}', ritmo(ej_rc))`\ \text{/km})$$
 
 [3. Ritmo relativo]{.paso-t}
-$$RP_{\text{salida}} = 100 \times \frac{`r num(ej$rmc * 60)` - `r num(ej_rs * 60)`}{`r num(ej$rmc * 60)`} = \mathbf{`r sprintf("%+.1f", ej$rp_sal)`\,\%}$$
-$$RP_{\text{cierre}} = 100 \times \frac{`r num(ej$rmc * 60)` - `r num(ej_rc * 60)`}{`r num(ej$rmc * 60)`} = \mathbf{`r sprintf("%+.1f", ej$rp_cie)`\,\%}$$
+$$RR_{\text{salida}} = 100 \times \frac{`r num(ej$rmc * 60)` - `r num(ej_rs * 60)`}{`r num(ej$rmc * 60)`} = \mathbf{`r sprintf("%+.1f", ej$rp_sal)`\,\%}$$
+$$RR_{\text{cierre}} = 100 \times \frac{`r num(ej$rmc * 60)` - `r num(ej_rc * 60)`}{`r num(ej$rmc * 60)`} = \mathbf{`r sprintf("%+.1f", ej$rp_cie)`\,\%}$$
 :::
 :::
 ::::
@@ -178,7 +178,7 @@ $$RP_{\text{cierre}} = 100 \times \frac{`r num(ej$rmc * 60)` - `r num(ej_rc * 60
 ::: tarjeta
 [4. Clasificación]{.tit}
 
-Según el ritmo relativo (RP) de cada tramo:
+Según el ritmo relativo (RR) de cada tramo:
 
 ```{=html}
 <div class="clasif">
@@ -191,7 +191,7 @@ Según el ritmo relativo (RP) de cada tramo:
   <span style="position:absolute;left:65%;transform:translateX(-50%)">+5 %</span></div>
 ```
 
-RP positivo = ese tramo fue [más rápido]{.c-r} que su promedio.
+RR positivo = ese tramo fue [más rápido]{.c-r} que su promedio.
 
 [±5 % ≈ 18 s/km para el corredor promedio.]{.suave}
 :::
@@ -199,7 +199,7 @@ RP positivo = ese tramo fue [más rápido]{.c-r} que su promedio.
 ::: tarjeta
 [5. Chocar con la pared]{.tit}
 
-Momento en que el corredor **agota sus reservas de energía** (glucógeno) y su ritmo **se desploma**, casi siempre después del km 30.
+Se choca con la pared cuando el ritmo **se desploma**: la segunda mitad de la carrera es **más de 30 % más lenta** que la primera. Casi siempre ocurre después del km 30.
 
 Para medirlo:
 $$\text{caída} = 100 \times \frac{t_{\text{2.ª mitad}} - t_{\text{1.ª mitad}}}{t_{\text{1.ª mitad}}} > 30\,\%$$
@@ -335,31 +335,6 @@ ggplot(barras, aes(eje, t / 60, fill = clase == "Igual")) +
   tema
 ```
 
-## Resultado 3: comparando corredores de nivel parecido
-
-```{r}
-#| label: niveles
-#| fig-width: 12
-#| fig-height: 5
-#| fig-align: center
-niveles <- berlin |>
-  filter(!is.na(nivel), salida != "Por debajo") |>
-  group_by(nivel) |>
-  summarise(extra = mean(time_full[salida == "Por encima"]) - mean(time_full[salida == "Igual"]),
-            p_rapido = mean(salida == "Por encima"))
-
-ggplot(niveles, aes(nivel, extra)) +
-  geom_col(fill = rapido, width = .5) +
-  geom_text(aes(label = sprintf("+%.0f min", extra)), vjust = -0.5, colour = rapido,
-            fontface = "bold", size = 7) +
-  scale_x_discrete(labels = function(x) paste0(x, "\n", round(100 * niveles$p_rapido), " % sale rápido")) +
-  scale_y_continuous(limits = c(0, max(niveles$extra) * 1.25)) +
-  labs(x = NULL, y = "Minutos extra vs. salir a su ritmo") +
-  tema
-```
-
-Dentro de cada nivel el costo es menor que los +41 min, pero [existe siempre y crece en los menos rápidos]{.c-r}.
-
 ```{r}
 #| label: pared
 p_pared <- berlin |> group_by(salida) |>
@@ -369,7 +344,7 @@ pct2 <- function(x) if (x < 1) sprintf("%.2f %%", x) else sprintf("%.1f %%", x)
 lo <- fila("Por debajo"); ig <- fila("Igual"); ra <- fila("Por encima")
 ```
 
-## Resultado 4: ¿quién choca con la pared?
+## Resultado 3: ¿quién choca con la pared?
 
 :::: {.grid3}
 ::: {.tarjeta .tarjeta-num style="border-top:4px solid #5B6B88"}
@@ -410,8 +385,7 @@ Salida comparada con su propio ritmo medio (±5 %). Chocar con la pared = segund
 ## Conclusiones
 
 1. **Correr parejo** es la estrategia asociada con mejores tiempos en Berlín, tanto en la salida como en el cierre.
-2. **Salir demasiado rápido** es el error más común: le cuesta más a los corredores menos rápidos, que además lo cometen más, y es la principal vía para chocar con la pared.
-3. **Limitaciones:** solo incluye a quienes terminaron y una sola maratón muy plana; el costo real de salir rápido podría ser mayor.
+2. **Limitaciones:** solo incluye a quienes terminaron y una sola maratón muy plana; el costo real de salir rápido podría ser mayor.
 
 ::: tarjeta
 [Consejo práctico]{.tit}
